@@ -11,7 +11,7 @@ public class MecanumDriveMode extends OpMode {
     MecanumDrive drive = new MecanumDrive();
     //private DcMotor IntakeMotorRight;
     //private DcMotor IntakeMotorLeft;
-   // private DcMotor LiftMotor;
+   private DcMotor LiftMotor;
     //int liftUpPosition = -2800;
     //int liftDownPosition = 0;
 

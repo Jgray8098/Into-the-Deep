@@ -18,8 +18,8 @@ public class HorizontalSlidePID {
 
     // Slide positions
     private final int POSITION_0 = 0;   // Starting position
-    private final int POSITION_1 = -200; // Midway position
-    private final int POSITION_2 = -1500; // Full extension
+    public static final int TRANSFER_POSITION = -200; // Midway position
+    public static final int INTAKE_POSITION = -1500; // Full extension
     private int targetPosition = POSITION_0;
 
     // Constructor

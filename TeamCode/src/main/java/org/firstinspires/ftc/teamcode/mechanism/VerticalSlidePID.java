@@ -54,20 +54,23 @@ public class VerticalSlidePID {
         int rightPosition = rightLift.getCurrentPosition();
 
         if (motorsOff) {
-            // Ensure motors are only off when already at LOW_POSITION
             if (targetPosition == LOW_POSITION
                     && Math.abs(leftPosition - LOW_POSITION) < DEADBAND
                     && Math.abs(rightPosition - LOW_POSITION) < DEADBAND) {
                 leftLift.setPower(HOLD_POWER);
                 rightLift.setPower(HOLD_POWER);
             } else {
-                motorsOff = false; // Allow movement to LOW_POSITION
+                motorsOff = false;
             }
             return;
         }
 
         double leftError = targetPosition - leftPosition;
         double rightError = targetPosition - rightPosition;
+
+        // Correct right motor target based on left motor's position
+        double rightTargetCorrection = leftPosition - rightPosition;
+        rightError += rightTargetCorrection * 0.7; // Adjust the correction weight if needed
 
         // Deadband check
         if (Math.abs(leftError) < DEADBAND && Math.abs(rightError) < DEADBAND) {
@@ -85,13 +88,7 @@ public class VerticalSlidePID {
         double leftPower = scaleFactor * (KP * leftError + KI * integralSum + KD * derivative);
         double rightPower = scaleFactor * (KP * rightError + KI * integralSum + KD * derivative);
 
-        // Error correction between slides
-        double errorDifference = leftError - rightError;
-        double correctionFactor = 0.005; // Adjust this value as needed
-        leftPower -= correctionFactor * errorDifference;
-        rightPower += correctionFactor * errorDifference;
-
-        // Normalize power to avoid exceeding max motor power
+        // Normalize power
         double maxPower = Math.max(Math.abs(leftPower), Math.abs(rightPower));
         if (maxPower > 1.0) {
             leftPower /= maxPower;

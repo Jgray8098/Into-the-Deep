@@ -16,9 +16,11 @@ public class HorizontalSlidePID {
     private double integral = 0;
     private double previousError = 0;
 
+    private static final int POSITION_TOLERANCE = 15;
+
     // Slide positions
     private final int POSITION_0 = 0;   // Starting position
-    public static final int TRANSFER_POSITION = -200; // Midway position
+    public static final int TRANSFER_POSITION = -135; // Midway position
     public static final int INTAKE_POSITION = -1500; // Full extension
     private int targetPosition = POSITION_0;
 
@@ -49,7 +51,7 @@ public class HorizontalSlidePID {
         double power = (kP * error) + (kI * integral) + (kD * derivative);
 
         // Limit motor power to [-1, 1]
-        power = Math.max(-0.80, Math.min(0.80, power));
+        power = Math.max(-0.70, Math.min(0.70, power));
 
         // Set motor power
         HorizontalSlide.setPower(power);
@@ -64,5 +66,10 @@ public class HorizontalSlidePID {
 
     public int getTargetPosition() {
         return targetPosition;
+    }
+
+    public boolean isAtTargetPosition(int targetPosition) {
+        int currentPosition = HorizontalSlide.getCurrentPosition();
+        return Math.abs(currentPosition - targetPosition) < POSITION_TOLERANCE;
     }
 }

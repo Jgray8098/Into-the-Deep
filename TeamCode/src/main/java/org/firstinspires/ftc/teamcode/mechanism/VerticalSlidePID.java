@@ -9,7 +9,7 @@ public class VerticalSlidePID {
 
     // PID coefficients
     private static final double KP = 0.03;
-    private static final double KI = 0.0;
+    private static final double KI = 0.00;
     private static final double KD = 0.02;
 
     // Allowable error to stop corrections near the target
@@ -22,9 +22,9 @@ public class VerticalSlidePID {
     private static final double INTEGRAL_MAX = 1000;
 
     // Target positions for the lift
-    public static final int LOW_POSITION = 0;
-    public static final int MID_POSITION = 1500;
-    public static final int HIGH_POSITION = 3500;
+    public static final int LOW_POSITION = 100;
+    public static final int MID_POSITION = 2400;
+    public static final int HIGH_POSITION = 4250;
 
     private int targetPosition = LOW_POSITION;
     private boolean motorsOff = true;
@@ -70,10 +70,11 @@ public class VerticalSlidePID {
 
         // Correct right motor target based on left motor's position
         double rightTargetCorrection = leftPosition - rightPosition;
-        rightError += rightTargetCorrection * 0.7; // Adjust the correction weight if needed
+        rightError += rightTargetCorrection * 0.7;
 
         // Deadband check
         if (Math.abs(leftError) < DEADBAND && Math.abs(rightError) < DEADBAND) {
+            integralSum = 0; // Reset integral sum
             leftLift.setPower(HOLD_POWER);
             rightLift.setPower(HOLD_POWER);
             return;
@@ -82,9 +83,11 @@ public class VerticalSlidePID {
         integralSum += (leftError + rightError) / 2;
         integralSum = Math.max(Math.min(integralSum, INTEGRAL_MAX), -INTEGRAL_MAX);
 
-        double derivative = (leftError - lastError);
+        double averageError = (leftError + rightError) / 2;
+        double derivative = (averageError - lastError);
+        lastError = averageError;
 
-        double scaleFactor = Math.max(0.1, Math.abs(leftError) / 100.0);
+        double scaleFactor = Math.max(0.1, Math.abs(averageError) / 100.0);
         double leftPower = scaleFactor * (KP * leftError + KI * integralSum + KD * derivative);
         double rightPower = scaleFactor * (KP * rightError + KI * integralSum + KD * derivative);
 
@@ -97,7 +100,5 @@ public class VerticalSlidePID {
 
         leftLift.setPower(leftPower);
         rightLift.setPower(rightPower);
-
-        lastError = leftError;
     }
 }

@@ -20,7 +20,7 @@ public class MecanumDriveMode extends OpMode {
     private static final double INTAKE_POSITION = 0.2;
     private static final double TRANSFER_POSITION = 0.8;
 
-    private static final double DEPOSIT_TRANSFER = 0.7;
+    private static final double DEPOSIT_TRANSFER = 0.12;
     private static final double DEPOSIT_DUMP = 0.8;
 
     //private static final int REVERSE_DURATION_MS = 3000;
@@ -57,22 +57,22 @@ public class MecanumDriveMode extends OpMode {
         mecanumDrive.drive(forward, drive, rotate, false);
 
         //Intake Program
-        if (gamepad1.x) {
+        if (gamepad2.x) {
             IntakeMotor.setPower(-0.5);
         } else {
             IntakeMotor.setPower(0);
         }
 
-        if (gamepad1.y) {
+        if (gamepad2.y) {
             horizontalSlide.setTargetPosition(HorizontalSlidePID.INTAKE_POSITION);
             if (horizontalSlide.isAtTargetPosition(HorizontalSlidePID.INTAKE_POSITION)) {
                 intakeArmServo.setPosition(INTAKE_POSITION);
             }
-        } else if (gamepad1.a) {
+        } else if (gamepad2.a) {
             IntakeMotor.setPower(0.1);
             horizontalSlide.setTargetPosition(HorizontalSlidePID.TRANSFER_POSITION);
             intakeArmServo.setPosition(TRANSFER_POSITION);
-        } else if (gamepad1.b && Math.abs(intakeArmServo.getPosition() - TRANSFER_POSITION) > 0.01) {
+        } else if (gamepad2.b && Math.abs(intakeArmServo.getPosition() - TRANSFER_POSITION) > 0.01) {
             IntakeMotor.setPower(1.0);
         }
 
@@ -85,14 +85,19 @@ public class MecanumDriveMode extends OpMode {
         telemetry.update();
 
         //Vertical Lift Program
+        if (gamepad2.left_bumper) {
+            depositServo.setPosition(DEPOSIT_DUMP);
+        } else {
+            depositServo.setPosition(DEPOSIT_TRANSFER);
+        }
         // Set target positions with buttons
-        if (gamepad1.dpad_down) {
+        if (gamepad2.dpad_down) {
             verticalSlide.setTargetPosition(VerticalSlidePID.LOW_POSITION);
             telemetry.addData("Target Position", "Low");
-        } else if (gamepad1.dpad_right) {
+        } else if (gamepad2.dpad_right) {
             verticalSlide.setTargetPosition(VerticalSlidePID.MID_POSITION);
             telemetry.addData("Target Position", "Mid");
-        } else if (gamepad1.dpad_up) {
+        } else if (gamepad2.dpad_up) {
             verticalSlide.setTargetPosition(VerticalSlidePID.HIGH_POSITION);
             telemetry.addData("Target Position", "High");
         }
@@ -104,7 +109,6 @@ public class MecanumDriveMode extends OpMode {
         telemetry.addData("Left Lift Position", verticalSlide.leftLift.getCurrentPosition());
         telemetry.addData("Right Lift Position", verticalSlide.rightLift.getCurrentPosition());
         telemetry.update();
-
 
     }
 }

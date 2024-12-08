@@ -63,23 +63,22 @@ public class MecanumDriveMode extends OpMode {
             IntakeMotor.setPower(0);
         }
 
+        // Set target positions based on gamepad inputs
         if (gamepad2.y) {
             horizontalSlide.setTargetPosition(HorizontalSlidePID.INTAKE_POSITION);
-            if (horizontalSlide.isAtTargetPosition(HorizontalSlidePID.INTAKE_POSITION)) {
-                intakeArmServo.setPosition(INTAKE_POSITION);
-            }
+            intakeArmServo.setPosition(INTAKE_POSITION);
         } else if (gamepad2.a) {
-            IntakeMotor.setPower(0.1);
             horizontalSlide.setTargetPosition(HorizontalSlidePID.TRANSFER_POSITION);
             intakeArmServo.setPosition(TRANSFER_POSITION);
+            IntakeMotor.setPower(0.1); // Adjust intake motor power if needed
         } else if (gamepad2.b && Math.abs(intakeArmServo.getPosition() - TRANSFER_POSITION) > 0.01) {
             IntakeMotor.setPower(1.0);
         }
 
+        // Continuously update horizontal slide PID logic
         horizontalSlide.update();
 
-        //double position = HorizontalSlide.getCurrentPosition();
-        //double desiredPosition = HorizontalSlide.getTargetPosition();
+        // Telemetry for debugging
         telemetry.addData("Current Position", horizontalSlide.getCurrentPosition());
         telemetry.addData("Desired Position", horizontalSlide.getTargetPosition());
         telemetry.update();

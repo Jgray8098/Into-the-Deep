@@ -10,7 +10,7 @@ public class HorizontalSlidePID {
     // PID constants
     private final double kP = 0.01;
     private final double kI = 0.0;
-    private final double kD = 0.02;
+    private final double kD = 0.01;
 
     // PID state
     private double integral = 0;
@@ -20,11 +20,10 @@ public class HorizontalSlidePID {
 
     // Slide positions
     private final int POSITION_0 = 0;   // Starting position
-    public static final int TRANSFER_POSITION = -135; // Midway position
+    public static final int TRANSFER_POSITION = -145; // Midway position
     public static final int INTAKE_POSITION = -1500; // Full extension
     private int targetPosition = POSITION_0;
 
-    // Constructor
     public HorizontalSlidePID(HardwareMap hardwareMap) {
         HorizontalSlide = hardwareMap.get(DcMotor.class, "HorizontalSlide");
 
@@ -38,10 +37,26 @@ public class HorizontalSlidePID {
         targetPosition = position;
     }
 
+    public int getTargetPosition() {
+        return targetPosition;
+    }
+
+    public int getCurrentPosition() {
+        return HorizontalSlide.getCurrentPosition();
+    }
+
     public void update() {
         // Get current position and calculate error
         int currentPosition = HorizontalSlide.getCurrentPosition();
         double error = targetPosition - currentPosition;
+
+        // If within tolerance, stop adjusting
+        if (Math.abs(error) < POSITION_TOLERANCE) {
+            HorizontalSlide.setPower(0);
+            integral = 0; // Reset integral when at target
+            previousError = 0; // Reset derivative term
+            return;
+        }
 
         // Calculate PID terms
         integral += error;
@@ -51,25 +66,12 @@ public class HorizontalSlidePID {
         double power = (kP * error) + (kI * integral) + (kD * derivative);
 
         // Limit motor power to [-1, 1]
-        power = Math.max(-0.70, Math.min(0.70, power));
+        power = Math.max(-0.60, Math.min(0.60, power));
 
         // Set motor power
         HorizontalSlide.setPower(power);
 
         // Update previous error
         previousError = error;
-    }
-
-    public int getCurrentPosition() {
-        return HorizontalSlide.getCurrentPosition();
-    }
-
-    public int getTargetPosition() {
-        return targetPosition;
-    }
-
-    public boolean isAtTargetPosition(int targetPosition) {
-        int currentPosition = HorizontalSlide.getCurrentPosition();
-        return Math.abs(currentPosition - targetPosition) < POSITION_TOLERANCE;
     }
 }

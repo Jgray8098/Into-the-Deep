@@ -84,6 +84,9 @@ public class MecanumDrive {
         //Get Yaw angle from IMU
         double currentHeading = getHeading();
 
+        // Traction correction factor for strafing
+        double backTractionCorrection = 0.7; //Adjust between 0.0 and 1.0
+
         //Calculate PID correction if enabled
         double correction = 0;
         if (usePID && Math.abs(rotate) < 0.1) {
@@ -93,8 +96,14 @@ public class MecanumDrive {
 
         double frontLeftPower = forward + right + rotate;
         double frontRightPower = forward - right - rotate;
-        double backLeftPower = forward - right + rotate;
-        double backRightPower = forward + right - rotate;
+        double backLeftPower = (forward - right + rotate);
+        double backRightPower = (forward + right - rotate);
+
+        // Apply correction only when strafing is significant
+        if (Math.abs(right) > Math.abs(forward) && Math.abs(right) > Math.abs(rotate)) {
+            backLeftPower *= backTractionCorrection;
+            backRightPower *= backTractionCorrection;
+        }
 
         setPowers(frontLeftPower, frontRightPower, backLeftPower, backRightPower);
         //return currentHeading;

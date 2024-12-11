@@ -8,9 +8,9 @@ public class VerticalSlidePID {
     public final DcMotor rightLift;
 
     // PID coefficients
-    private static final double KP = 0.015;
-    private static final double KI = 0.00;
-    private static final double KD = 0.01;
+    private static final double KP = 0.014;
+    private static final double KI = 0.002;
+    private static final double KD = 0.013;
 
     // Allowable error to stop corrections near the target
     private static final int DEADBAND = 20;
@@ -22,7 +22,7 @@ public class VerticalSlidePID {
     private static final double INTEGRAL_MAX = 1000;
 
     // Target positions for the lift
-    public static final int LOW_POSITION = 20;
+    public static final int LOW_POSITION = 10;
     public static final int MID_POSITION = 2400;
     public static final int HIGH_POSITION = 4250;
 

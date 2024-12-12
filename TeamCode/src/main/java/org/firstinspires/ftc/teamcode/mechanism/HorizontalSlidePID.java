@@ -8,9 +8,9 @@ public class HorizontalSlidePID {
     private DcMotor HorizontalSlide;
 
     // PID constants
-    private final double kP = 0.01;
-    private final double kI = 0.0;
-    private final double kD = 0.01;
+    private final double kP = 0.008;
+    private final double kI = 0.00;
+    private final double kD = 0.008;
 
     // PID state
     private double integral = 0;

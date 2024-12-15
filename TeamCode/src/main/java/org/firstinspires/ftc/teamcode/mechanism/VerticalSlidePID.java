@@ -21,10 +21,14 @@ public class VerticalSlidePID {
     // Maximum value for integral sum
     private static final double INTEGRAL_MAX = 1000;
 
-    // Target positions for the lift
+    // Target positions for the lift to deposit in buckets
     public static final int LOW_POSITION = 10;
     public static final int MID_POSITION = 2400;
     public static final int HIGH_POSITION = 4250;
+
+    //Target positions for level 2 ascent
+    public static final int ASCENT_POSITION_UP = 4100;
+    public static final int ASCENT_POSITION_DOWN = 3200;
 
     private int targetPosition = LOW_POSITION;
     private boolean motorsOff = true;

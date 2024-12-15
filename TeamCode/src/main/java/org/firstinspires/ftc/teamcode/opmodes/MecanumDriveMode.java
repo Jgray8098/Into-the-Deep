@@ -15,13 +15,23 @@ public class MecanumDriveMode extends OpMode {
     private DcMotor IntakeMotor;
     private Servo intakeArmServo;
     private Servo depositServo;
+    private Servo leftHookServo;
+    private Servo rightHookServo;
 
+    //Positions for Intake Mechanism
     private static final double INIT_POSITION = 0.5;
     private static final double INTAKE_POSITION = 0.2;
     private static final double TRANSFER_POSITION = 0.8;
 
+    //Positions for Deposit Mechanism
     private static final double DEPOSIT_TRANSFER = 0.12;
     private static final double DEPOSIT_DUMP = 0.8;
+
+    //Positions for Ascent Mecanism
+    private static final double OPEN_POSITION_RIGHT = 0.5;
+    private static final double CLOSED_POSITION_RIGHT = 0.97;
+    private static final double OPEN_POSITION_LEFT = 0.47;
+    private static final double CLOSED_POSITION_LEFT = 0.97;
 
     //private static final int REVERSE_DURATION_MS = 3000;
     //private ElapsedTime reverseTimer = new ElapsedTime();
@@ -38,8 +48,12 @@ public class MecanumDriveMode extends OpMode {
         intakeArmServo = hardwareMap.get(Servo.class, "intakeArmServo");
         depositServo = hardwareMap.get(Servo.class, "depositServo");
         depositServo = hardwareMap.get(Servo.class, "depositServo");
+        leftHookServo = hardwareMap.get(Servo.class, "leftHookServo");
+        rightHookServo = hardwareMap.get(Servo.class, "rightHookServo");
         intakeArmServo.setPosition(INIT_POSITION);
         depositServo.setPosition(DEPOSIT_TRANSFER);
+        leftHookServo.setPosition(OPEN_POSITION_LEFT);
+        rightHookServo.setPosition(OPEN_POSITION_RIGHT);
         horizontalSlide = new HorizontalSlidePID(hardwareMap);
         verticalSlide = new VerticalSlidePID(hardwareMap);
         mecanumDrive.init(hardwareMap);
@@ -99,6 +113,15 @@ public class MecanumDriveMode extends OpMode {
         } else if (gamepad2.dpad_up) {
             verticalSlide.setTargetPosition(VerticalSlidePID.HIGH_POSITION);
             telemetry.addData("Target Position", "High");
+        }
+
+        //Ascent Program
+        if (gamepad1.dpad_up) {
+            leftHookServo.setPosition(CLOSED_POSITION_LEFT);
+            rightHookServo.setPosition(CLOSED_POSITION_RIGHT);
+            verticalSlide.setTargetPosition(VerticalSlidePID.ASCENT_POSITION_UP);
+        } else if (gamepad1.dpad_down) {
+            verticalSlide.setTargetPosition(VerticalSlidePID.ASCENT_POSITION_DOWN);
         }
 
         // Update the lift controller

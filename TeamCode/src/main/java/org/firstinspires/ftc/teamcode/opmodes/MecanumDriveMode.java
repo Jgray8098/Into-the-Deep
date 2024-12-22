@@ -4,7 +4,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.mechanism.HorizontalSlidePID;
 import org.firstinspires.ftc.teamcode.mechanism.MecanumDrive;
@@ -18,35 +17,47 @@ public class MecanumDriveMode extends OpMode {
     private Servo leftHookServo;
     private Servo rightHookServo;
 
-    //Positions for Intake Mechanism
+    //Positions for Intake Mechanism Servo
     private static final double INIT_POSITION = 0.5;
-    private static final double INTAKE_POSITION = 0.2;
+    private static final double INTAKE_POSITION_OUT = 0.2;
+    private static final double INTAKE_POSITION_IN = 0.15;
     private static final double TRANSFER_POSITION = 0.8;
 
-    //Positions for Deposit Mechanism
-    private static final double DEPOSIT_TRANSFER = 0.12;
+    //Positions for Deposit Mechanism Servo
+    private static final double DEPOSIT_TRANSFER = 0.14;
     private static final double DEPOSIT_DUMP = 0.8;
 
-    //Positions for Ascent Mecanism
+    //Pincher Positions for level 2 ascent
     private static final double OPEN_POSITION_RIGHT = 0.5;
     private static final double CLOSED_POSITION_RIGHT = 0.97;
     private static final double OPEN_POSITION_LEFT = 0.47;
     private static final double CLOSED_POSITION_LEFT = 0.97;
 
-    //private static final int REVERSE_DURATION_MS = 3000;
-    //private ElapsedTime reverseTimer = new ElapsedTime();
-    //private boolean isReversing = false;
-    //private boolean hasReversedAtTransfer = false;
+    //Pincher Positions for scoring specimen
+    private static final double OPEN_PINCH_RIGHT = 0.85;
+    private static final double OPEN_PINCH_LEFT = 0.85;
+    private static final double CLOSED_PINCH_RIGHT = 1.0;
+    private static final double CLOSED_PINCH_LEFT = 1.0;
 
     private HorizontalSlidePID horizontalSlide;
     private VerticalSlidePID verticalSlide;
     MecanumDrive mecanumDrive = new MecanumDrive();
 
+    private boolean isYPressed = false;
+    private boolean isBPressed = false;
+    private boolean firstPressComplete = false;
+    private boolean rightBumperPressed = false;
+    private boolean bButtonPressed = false;
+
+    //Exponential scaling for teleop driving
+    private double applyExponentialScaling(double input, double exponent) {
+        return Math.signum(input) * Math.pow(Math.abs(input), exponent);
+    }
+
     @Override
     public void init() {
         IntakeMotor = hardwareMap.dcMotor.get("IntakeMotor");
         intakeArmServo = hardwareMap.get(Servo.class, "intakeArmServo");
-        depositServo = hardwareMap.get(Servo.class, "depositServo");
         depositServo = hardwareMap.get(Servo.class, "depositServo");
         leftHookServo = hardwareMap.get(Servo.class, "leftHookServo");
         rightHookServo = hardwareMap.get(Servo.class, "rightHookServo");
@@ -64,40 +75,77 @@ public class MecanumDriveMode extends OpMode {
     @Override
     public void loop() {
         //Mecanum Drive Program
-        double forward = -gamepad1.right_stick_y;
-        double drive = gamepad1.right_stick_x;
-        double rotate = gamepad1.left_stick_x;
+        double rawForward = -gamepad1.right_stick_y;
+        double rawDrive = gamepad1.right_stick_x;
+        double rawRotate = gamepad1.left_stick_x;
+
+        double forward = applyExponentialScaling(rawForward, 2.0);
+        double drive = applyExponentialScaling(rawDrive, 2.0);
+        double rotate = applyExponentialScaling(rawRotate, 2.0);
 
         mecanumDrive.drive(forward, drive, rotate, false);
 
-        //Intake Program
+        //Intake Program for Intake Motor
         if (gamepad2.x) {
-            IntakeMotor.setPower(-0.5);
+            IntakeMotor.setPower(-0.5); // Reverse intake
+        } else if (gamepad2.right_bumper &&
+                Math.abs(intakeArmServo.getPosition() - TRANSFER_POSITION) > 0.01) {
+            IntakeMotor.setPower(1.0); // Full power intake if not at TRANSFER_POSITION
+        } else if (gamepad2.a) {
+            IntakeMotor.setPower(0.3); // Hold power
         } else {
-            IntakeMotor.setPower(0);
+            IntakeMotor.setPower(0); // Turn off when no input
         }
 
-        // Set target positions based on gamepad inputs
-        if (gamepad2.y) {
-            horizontalSlide.setTargetPosition(HorizontalSlidePID.INTAKE_POSITION);
-            intakeArmServo.setPosition(INTAKE_POSITION);
-        } else if (gamepad2.a) {
+// Intake program for Horizontal Slide
+        if (gamepad2.y && !isYPressed) {  // Detect rising edge of gamepad2.y
+            if (!firstPressComplete) {
+                // First press: Move the horizontal slide to the intake position
+                horizontalSlide.setTargetPosition(HorizontalSlidePID.INTAKE_POSITION);
+                intakeArmServo.setPosition(TRANSFER_POSITION); // Move servo to transfer position
+                firstPressComplete = true;
+            } else {
+                // Second press: Move the intake arm servo to the intake position
+                intakeArmServo.setPosition(INTAKE_POSITION_OUT);
+                firstPressComplete = false; // Reset for future button presses
+            }
+            isYPressed = true; // Prevent multiple detections
+        } else if (!gamepad2.y) {
+            isYPressed = false; // Reset when button is released
+        }
+
+        if (gamepad2.b && !isBPressed) {  // Detect rising edge of gamepad2.b
+            if (!firstPressComplete) {
+                // First press: Move the horizontal slide to the intake position close
+                horizontalSlide.setTargetPosition(HorizontalSlidePID.INTAKE_POSITION_CLOSE);
+                intakeArmServo.setPosition(TRANSFER_POSITION); // Move servo to transfer position
+                firstPressComplete = true;
+            } else {
+                // Second press: Move the intake arm servo to the intake position
+                intakeArmServo.setPosition(INTAKE_POSITION_IN);
+                firstPressComplete = false; // Reset for future button presses
+            }
+            isBPressed = true; // Prevent multiple detections
+        } else if (!gamepad2.b) {
+            isBPressed = false; // Reset when button is released
+        }
+
+// Move horizontal slide to the transfer position
+        if (gamepad2.a) {
             horizontalSlide.setTargetPosition(HorizontalSlidePID.TRANSFER_POSITION);
             intakeArmServo.setPosition(TRANSFER_POSITION);
-            IntakeMotor.setPower(0.1); // Adjust intake motor power if needed
-        } else if (gamepad2.b && Math.abs(intakeArmServo.getPosition() - TRANSFER_POSITION) > 0.01) {
-            IntakeMotor.setPower(1.0);
         }
 
-        // Continuously update horizontal slide PID logic
+// Continuously update horizontal slide PID logic
         horizontalSlide.update();
 
-        // Telemetry for debugging
-        telemetry.addData("Current Position", horizontalSlide.getCurrentPosition());
-        telemetry.addData("Desired Position", horizontalSlide.getTargetPosition());
+// Telemetry for debugging
+        telemetry.addData("Current Slide Position", horizontalSlide.getCurrentPosition());
+        telemetry.addData("Servo Position", intakeArmServo.getPosition());
+        telemetry.addData("Target Slide Position", horizontalSlide.getTargetPosition());
         telemetry.update();
 
-        //Vertical Lift Program
+        //Vertical Lift Program for sample deposit to baskets
         if (gamepad2.left_bumper) {
             depositServo.setPosition(DEPOSIT_DUMP);
         } else {
@@ -106,6 +154,8 @@ public class MecanumDriveMode extends OpMode {
         // Set target positions with buttons
         if (gamepad2.dpad_down) {
             verticalSlide.setTargetPosition(VerticalSlidePID.LOW_POSITION);
+            leftHookServo.setPosition(OPEN_POSITION_LEFT);
+            rightHookServo.setPosition(OPEN_POSITION_RIGHT);
             telemetry.addData("Target Position", "Low");
         } else if (gamepad2.dpad_right) {
             verticalSlide.setTargetPosition(VerticalSlidePID.MID_POSITION);
@@ -115,13 +165,47 @@ public class MecanumDriveMode extends OpMode {
             telemetry.addData("Target Position", "High");
         }
 
-        //Ascent Program
+        //Vertical lift program for level 2 Ascent
         if (gamepad1.dpad_up) {
             leftHookServo.setPosition(CLOSED_POSITION_LEFT);
             rightHookServo.setPosition(CLOSED_POSITION_RIGHT);
             verticalSlide.setTargetPosition(VerticalSlidePID.ASCENT_POSITION_UP);
         } else if (gamepad1.dpad_down) {
             verticalSlide.setTargetPosition(VerticalSlidePID.ASCENT_POSITION_DOWN);
+        }
+
+        //Vertical lift program for specimen deposit to submersible
+        // Handle right bumper (close servos and hold position)
+        if (gamepad1.right_bumper) {
+            rightHookServo.setPosition(CLOSED_PINCH_RIGHT);
+            leftHookServo.setPosition(CLOSED_PINCH_LEFT);
+            rightBumperPressed = true; // Update state
+            bButtonPressed = false;   // Reset xButtonPressed
+        }
+
+        // Handle b button (lower lift and open servos)
+        if (gamepad1.b && rightBumperPressed) {
+            verticalSlide.setTargetPosition(VerticalSlidePID.HIGH_CHAMBER_DOWN);
+            bButtonPressed = true; // Update state
+        }
+
+        // Handle servo opening when lift reaches the HIGH_CHAMBER_DOWN position
+        if (bButtonPressed && Math.abs(verticalSlide.leftLift.getCurrentPosition() - VerticalSlidePID.HIGH_CHAMBER_DOWN) < 20) {
+            leftHookServo.setPosition(OPEN_PINCH_LEFT);
+            rightHookServo.setPosition(OPEN_PINCH_RIGHT);
+            rightBumperPressed = false; // Reset state
+            bButtonPressed = false;     // Reset state
+        }
+
+        // Handle y button (lift to HIGH_CHAMBER_UP and open servos)
+        if (gamepad1.a) {
+            verticalSlide.setTargetPosition(VerticalSlidePID.GRAB_SPECIMEN);
+            leftHookServo.setPosition(OPEN_PINCH_LEFT);
+            rightHookServo.setPosition(OPEN_PINCH_RIGHT);
+        }
+
+        if (gamepad1.y) {
+            verticalSlide.setTargetPosition(VerticalSlidePID.HIGH_CHAMBER_UP);
         }
 
         // Update the lift controller

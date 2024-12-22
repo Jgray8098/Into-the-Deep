@@ -26,6 +26,11 @@ public class VerticalSlidePID {
     public static final int MID_POSITION = 2400;
     public static final int HIGH_POSITION = 4250;
 
+    //Target positions for the lift to score specimens in the high position
+    public static final int HIGH_CHAMBER_UP = 2800;
+    public static final int HIGH_CHAMBER_DOWN = 2150;
+    public static final int GRAB_SPECIMEN = 825;
+
     //Target positions for level 2 ascent
     public static final int ASCENT_POSITION_UP = 4100;
     public static final int ASCENT_POSITION_DOWN = 3200;

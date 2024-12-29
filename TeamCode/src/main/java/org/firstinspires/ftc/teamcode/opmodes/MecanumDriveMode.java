@@ -103,12 +103,12 @@ public class MecanumDriveMode extends OpMode {
         if (isSampleScoringMode) {
             //Intake Program for Intake Motor
             if (gamepad2.x) {
-                IntakeMotor.setPower(-0.5); // Reverse intake
+                IntakeMotor.setPower(-0.4); // Reverse intake
             } else if (gamepad2.right_bumper &&
                     Math.abs(intakeArmServo.getPosition() - TRANSFER_POSITION) > 0.01) {
                 IntakeMotor.setPower(1.0); // Full power intake if not at TRANSFER_POSITION
             } else if (gamepad2.a) {
-                IntakeMotor.setPower(0.3); // Hold power
+                IntakeMotor.setPower(0.4); // Hold power
             } else {
                 IntakeMotor.setPower(0); // Turn off when no input
             }

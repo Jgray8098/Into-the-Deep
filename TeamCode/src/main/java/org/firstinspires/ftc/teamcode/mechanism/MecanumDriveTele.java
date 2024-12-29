@@ -1,8 +1,5 @@
 package org.firstinspires.ftc.teamcode.mechanism;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
-
-import com.qualcomm.hardware.bosch.BHI260IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -11,7 +8,7 @@ import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-public class MecanumDrive {
+public class MecanumDriveTele {
     //Drive Motors
     private DcMotor frontLeftMotor;
     private DcMotor frontRightMotor;

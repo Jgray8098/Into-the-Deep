@@ -50,6 +50,7 @@ public class MecanumDriveMode extends OpMode {
     private boolean bButtonPressed = false;
     private boolean isSampleScoringMode = true;
     private boolean psButtonPressed = false;
+    boolean isIntakeRunning = false;
 
     //Variables for Horizontal Slide Timer
     private long startTime = 0;
@@ -103,15 +104,25 @@ public class MecanumDriveMode extends OpMode {
         if (isSampleScoringMode) {
             //Intake Program for Intake Motor
             if (gamepad2.x) {
-                IntakeMotor.setPower(-0.4); // Reverse intake
-            } else if (gamepad2.right_bumper &&
-                    Math.abs(intakeArmServo.getPosition() - TRANSFER_POSITION) > 0.01) {
-                IntakeMotor.setPower(1.0); // Full power intake if not at TRANSFER_POSITION
+                // Reverse intake and turn off the motor
+                IntakeMotor.setPower(-0.4);
+                isIntakeRunning = false; // Reset the state
+            } else if (gamepad2.right_bumper) {
+                // Turn on the intake motor and set the state
+                IntakeMotor.setPower(1.0);
+                isIntakeRunning = true;
             } else if (gamepad2.a) {
-                IntakeMotor.setPower(0.4); // Hold power
+                // Lower the intake motor power when gamepad2.a is pushed
+                IntakeMotor.setPower(0.1);
+                isIntakeRunning = true; // Keep the state as running
+            } else if (isIntakeRunning) {
+                // Keep the intake motor running at full power if the state is true
+                IntakeMotor.setPower(1.0);
             } else {
-                IntakeMotor.setPower(0); // Turn off when no input
+                // Turn off the motor when no input and the state is false
+                IntakeMotor.setPower(0);
             }
+
 
             // Intake program for Horizontal Slide
             if (gamepad2.y && !isYPressed) {  // Detect rising edge of gamepad2.y

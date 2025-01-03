@@ -21,7 +21,7 @@ public class MecanumDriveMode extends OpMode {
     private static final double INIT_POSITION = 0.5;
     private static final double INTAKE_POSITION_OUT = 0.2;
     private static final double INTAKE_POSITION_IN = 0.15;
-    private static final double TRANSFER_POSITION = 0.8;
+    private static final double TRANSFER_POSITION = 0.78;
 
     //Positions for Deposit Mechanism Servo
     private static final double DEPOSIT_TRANSFER = 0.14;

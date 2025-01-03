@@ -62,6 +62,12 @@ public class VerticalSlidePID {
         motorsOff = position == LOW_POSITION;
     }
 
+    public boolean isAtTarget() {
+        int leftError = Math.abs(targetPosition - leftLift.getCurrentPosition());
+        int rightError = Math.abs(targetPosition - rightLift.getCurrentPosition());
+        return leftError < DEADBAND && rightError < DEADBAND;
+    }
+
     public void update() {
         int leftPosition = leftLift.getCurrentPosition();
         int rightPosition = rightLift.getCurrentPosition();

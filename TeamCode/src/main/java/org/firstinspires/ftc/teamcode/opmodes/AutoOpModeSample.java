@@ -57,15 +57,16 @@ public class AutoOpModeSample extends LinearOpMode {
         rightHookServo.setPosition(OPEN_POSITION_RIGHT);
 
         Action trajectoryMoveToBasket = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(50, -67))
+                .strafeTo(new Vector2d(51, -68))
                 .turnTo(Math.toRadians(135))
                 .build();
 
         Pose2d Pose1 = new Pose2d(50, -39, Math.toRadians(135));
 
-        Action trajectoryMoveToPark = drive.actionBuilder(Pose1)
-                .splineTo(new Vector2d(0, -27), Math.toRadians(135))
-                //.turnTo(Math.toRadians(25))
+        Action trajectoryMoveToSamples = drive.actionBuilder(Pose1)
+                .lineToYConstantHeading(-28)
+                .turnTo(Math.toRadians(245))
+                .strafeToConstantHeading(new Vector2d(50, -67))
                 .build();
 
         waitForStart();
@@ -77,14 +78,21 @@ public class AutoOpModeSample extends LinearOpMode {
         // Follow trajectory
         Actions.runBlocking(new SequentialAction(trajectoryMoveToBasket));
 
-        // Move lift to high position
+        // Move lift to high position with timeout
         verticalSlide.setTargetPosition(VerticalSlidePID.HIGH_POSITION);
-        while (!verticalSlide.isAtTarget() && opModeIsActive()) {
+        long liftStartTime = System.currentTimeMillis();
+        while (!verticalSlide.isAtTarget() && System.currentTimeMillis() - liftStartTime < 3000 && opModeIsActive()) {
             verticalSlide.update();
-            sleep(10);
+            sleep(2); // Update PID frequently
         }
 
-        // Perform scoring while holding lift position
+// Proceed regardless of whether the lift has reached the target
+        if (!verticalSlide.isAtTarget()) {
+            telemetry.addData("Warning", "Lift did not reach target position. Timing out.");
+            telemetry.update();
+        }
+
+// Perform scoring while holding lift position
         long scoringStartTime = System.currentTimeMillis();
         boolean scoringDone = false;
         while (System.currentTimeMillis() - scoringStartTime < 1500 && opModeIsActive()) {
@@ -98,16 +106,23 @@ public class AutoOpModeSample extends LinearOpMode {
                 scoringDone = true; // Prevent repeated scoring actions
             }
 
-            sleep(10); // Prevent CPU overload
+            sleep(2); // Prevent CPU overload
         }
 
-        // Move lift to low position
+// Move lift to low position with timeout
         verticalSlide.setTargetPosition(VerticalSlidePID.LOW_POSITION);
-        while (!verticalSlide.isAtTarget() && opModeIsActive()) {
+        liftStartTime = System.currentTimeMillis();
+        while (!verticalSlide.isAtTarget() && System.currentTimeMillis() - liftStartTime < 3000 && opModeIsActive()) {
             verticalSlide.update();
-            sleep(10);
+            sleep(2); // Update PID frequently
         }
-        Actions.runBlocking(new SequentialAction(trajectoryMoveToPark));
+
+// Proceed regardless of whether the lift has reached the target
+        if (!verticalSlide.isAtTarget()) {
+            telemetry.addData("Warning", "Lift did not fully return to low position. Timing out.");
+            telemetry.update();
+        }
+        //Actions.runBlocking(new SequentialAction(trajectoryMoveToSamples));
     }
 }
 

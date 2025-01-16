@@ -35,7 +35,7 @@ public class VerticalSlidePID {
     public static final int ASCENT_POSITION_UP = 4100;
     public static final int ASCENT_POSITION_DOWN = 3200;
 
-    private int targetPosition = LOW_POSITION;
+    public int targetPosition = LOW_POSITION;
     private boolean motorsOff = true;
     private double integralSum = 0;
     private double lastError = 0;

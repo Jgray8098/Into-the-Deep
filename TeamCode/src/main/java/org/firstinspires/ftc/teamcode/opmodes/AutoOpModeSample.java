@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.SleepAction;
@@ -102,7 +103,7 @@ public class AutoOpModeSample extends LinearOpMode {
 
         // Allow time for the slide to move
         long slideStartTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - slideStartTime < 1000 && opModeIsActive()) {
+        while (System.currentTimeMillis() - slideStartTime < 500 && opModeIsActive()) {
             horizontalSlide.update(); // Ensure the slide continues moving
             sleep(10); // Prevent CPU overload
         }
@@ -114,8 +115,8 @@ public class AutoOpModeSample extends LinearOpMode {
         long intakeStartTime = System.currentTimeMillis();
         IntakeMotor.setPower(1.0);
 
-        // Perform the driving action and run the intake for 5 seconds
-        while (System.currentTimeMillis() - intakeStartTime < 3000 && opModeIsActive()) {
+        // Perform the driving action and run the intake for 2 seconds
+        while (System.currentTimeMillis() - intakeStartTime < 2000 && opModeIsActive()) {
             // Update the driving action if provided
             if (trajectoryMoveToSample1 != null) {
                 trajectoryMoveToSample1.run(new TelemetryPacket()); // Execute the action
@@ -158,65 +159,199 @@ public class AutoOpModeSample extends LinearOpMode {
         IntakeMotor.setPower(0);
     }
 
-    @Override
-    public void runOpMode() {
-        Pose2d initialPose = new Pose2d(63.0, -39.0, Math.toRadians(180));
-        MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
-        verticalSlide = new VerticalSlidePID(hardwareMap);
-        horizontalSlide = new HorizontalSlidePID(hardwareMap);
+    public class LiftAndScoreAction implements Action {
+        private final VerticalSlidePID verticalSlide;
+        private final Servo depositServo;
+        private final double dumpPosition;
+        private final double transferPosition;
+        private long stateStartTime = -1;
+        private int state = 0;
 
-        intakeArmServo = hardwareMap.get(Servo.class, "intakeArmServo");
-        depositServo = hardwareMap.get(Servo.class, "depositServo");
-        leftHookServo = hardwareMap.get(Servo.class, "leftHookServo");
-        rightHookServo = hardwareMap.get(Servo.class, "rightHookServo");
-        IntakeMotor = hardwareMap.dcMotor.get("IntakeMotor");
+        public LiftAndScoreAction(VerticalSlidePID verticalSlide, Servo depositServo, double dumpPosition, double transferPosition) {
+            this.verticalSlide = verticalSlide;
+            this.depositServo = depositServo;
+            this.dumpPosition = dumpPosition;
+            this.transferPosition = transferPosition;
+        }
 
-        //intakeArmServo.setPosition(INIT_POSITION);
-        depositServo.setPosition(DEPOSIT_TRANSFER);
-        leftHookServo.setPosition(OPEN_POSITION_LEFT);
-        rightHookServo.setPosition(OPEN_POSITION_RIGHT);
+        @Override
+        public boolean run(@NonNull TelemetryPacket packet) {
+            verticalSlide.update(); // Continuously update the PID loop
 
-        Action trajectoryMoveToBasket1 = drive.actionBuilder(initialPose)
-                .strafeTo(new Vector2d(51, -68))
-                .turnTo(Math.toRadians(135))
-                .build();
+            // Debugging telemetry
+            packet.put("LiftAndScore State", state);
+            packet.put("Lift Target Position", verticalSlide.targetPosition);
+            packet.put("Lift Current Position", verticalSlide.leftLift.getCurrentPosition());
+            packet.put("Lift At Target", verticalSlide.isAtTarget());
 
-        Pose2d Pose1 = new Pose2d(51, -68, Math.toRadians(135));
+            switch (state) {
+                case 0: // Move to high position
+                    if (stateStartTime == -1) {
+                        verticalSlide.setTargetPosition(VerticalSlidePID.HIGH_POSITION);
+                        stateStartTime = System.currentTimeMillis();
+                    }
 
-        Action trajectoryMoveToSample1 = drive.actionBuilder(Pose1)
-                .turnTo(Math.toRadians(163))
-                .strafeToConstantHeading(new Vector2d(43, -65))
-                .build();
+                    if (verticalSlide.isAtTarget() || System.currentTimeMillis() - stateStartTime > 3000) {
+                        state++;
+                        stateStartTime = -1;
+                    }
+                    break;
 
-        Pose2d Pose2 = new Pose2d(43, -65, Math.toRadians(163));
+                case 1: // Dump the game piece
+                    if (stateStartTime == -1) {
+                        depositServo.setPosition(dumpPosition);
+                        stateStartTime = System.currentTimeMillis();
+                    }
 
-        Action trajectoryMoveToBasket2 = drive.actionBuilder(Pose2)
-                .strafeTo(new Vector2d(51, -68))
-                .turnTo(Math.toRadians(135))
-                .build();
+                    if (System.currentTimeMillis() - stateStartTime > 1000) { // 1-second delay
+                        state++;
+                        stateStartTime = -1;
+                    }
+                    break;
 
-        waitForStart();
+                case 2: // Return deposit to transfer position
+                    if (stateStartTime == -1) {
+                        depositServo.setPosition(transferPosition);
+                        stateStartTime = System.currentTimeMillis();
+                    }
 
-        if (isStopRequested()) return;
+                    if (System.currentTimeMillis() - stateStartTime > 500) { // Short delay for servo to move
+                        state++;
+                        stateStartTime = -1;
+                    }
+                    break;
 
-        intakeArmServo.setPosition(INIT_POSITION);
+                case 3: // Move back to low position
+                    if (stateStartTime == -1) {
+                        verticalSlide.setTargetPosition(VerticalSlidePID.LOW_POSITION);
+                        stateStartTime = System.currentTimeMillis();
+                    }
 
-        // Follow trajectory to net zone
-        Actions.runBlocking(new SequentialAction(trajectoryMoveToBasket1));
+                    if (verticalSlide.isAtTarget() || System.currentTimeMillis() - stateStartTime > 3000) {
+                        return true; // Action complete
+                    }
+                    break;
+            }
 
-        //Perform lift and score
-        performLiftAndScore(VerticalSlidePID.HIGH_POSITION, DEPOSIT_DUMP, DEPOSIT_TRANSFER);
-
-        //Perform the intake sequence with the driving Action
-        performIntakeSequence(trajectoryMoveToSample1);
-
-        //Follow trajectory back to net zone
-        Actions.runBlocking(new SequentialAction(trajectoryMoveToBasket2));
-
-        //Perform lift and score
-        performLiftAndScore(VerticalSlidePID.HIGH_POSITION, DEPOSIT_DUMP, DEPOSIT_TRANSFER);
-
+            return false; // Continue running until all states are complete
+        }
     }
-}
+
+    // Method to manage lift updates in a separate thread
+    public void manageLiftUpdates(LiftAndScoreAction liftAction) {
+        new Thread(() -> {
+            while (!liftAction.run(new TelemetryPacket()) && opModeIsActive()) {
+                verticalSlide.update(); // Ensure PID updates
+                sleep(10); // Prevent CPU overload
+            }
+        }).start();
+    }
+
+        @Override
+        public void runOpMode() {
+            Pose2d initialPose = new Pose2d(63.0, -39.0, Math.toRadians(180));
+            MecanumDrive drive = new MecanumDrive(hardwareMap, initialPose);
+            verticalSlide = new VerticalSlidePID(hardwareMap);
+            horizontalSlide = new HorizontalSlidePID(hardwareMap);
+
+            intakeArmServo = hardwareMap.get(Servo.class, "intakeArmServo");
+            depositServo = hardwareMap.get(Servo.class, "depositServo");
+            leftHookServo = hardwareMap.get(Servo.class, "leftHookServo");
+            rightHookServo = hardwareMap.get(Servo.class, "rightHookServo");
+            IntakeMotor = hardwareMap.dcMotor.get("IntakeMotor");
+
+            //intakeArmServo.setPosition(INIT_POSITION);
+            depositServo.setPosition(DEPOSIT_TRANSFER);
+            leftHookServo.setPosition(OPEN_POSITION_LEFT);
+            rightHookServo.setPosition(OPEN_POSITION_RIGHT);
+
+            Action trajectoryMoveToBasket1 = drive.actionBuilder(initialPose)
+                    .strafeTo(new Vector2d(51, -68))
+                    .turnTo(Math.toRadians(135))
+                    .waitSeconds(3.5)
+                    .build();
+
+            Pose2d Pose1 = new Pose2d(51, -68, Math.toRadians(135));
+
+            Action trajectoryMoveToSample1 = drive.actionBuilder(Pose1)
+                    .turnTo(Math.toRadians(163))
+                    .strafeToConstantHeading(new Vector2d(43, -65))
+                    .build();
+
+            Pose2d Pose2 = new Pose2d(43, -65, Math.toRadians(163));
+
+            Action trajectoryMoveToBasket2 = drive.actionBuilder(Pose2)
+                    .strafeTo(new Vector2d(51, -68))
+                    .turnTo(Math.toRadians(135))
+                    .waitSeconds(4)
+                    .build();
+
+            waitForStart();
+
+            if (isStopRequested()) return;
+
+            intakeArmServo.setPosition(INIT_POSITION);
+
+            // Create the LiftAndScoreAction
+            LiftAndScoreAction liftAction1 = new LiftAndScoreAction(verticalSlide, depositServo, DEPOSIT_DUMP, DEPOSIT_TRANSFER);
+
+// Start the lift updates in a separate thread
+            manageLiftUpdates(liftAction1);
+
+            // Create the LiftAndScoreAction
+            Actions.runBlocking(
+                    new ParallelAction(
+                            trajectoryMoveToBasket1, // Trajectory Action
+                            new Action() {
+                                @Override
+                                public boolean run(@NonNull TelemetryPacket packet) {
+                                    // Return true when the lift is complete
+                                    return liftAction1.run(packet);
+                                }
+                            }
+                    )
+            );
+
+            // Follow trajectory to net zone
+            //Actions.runBlocking(new SequentialAction(trajectoryMoveToBasket1));
+
+            //Perform lift and score
+            //performLiftAndScore(VerticalSlidePID.HIGH_POSITION, DEPOSIT_DUMP, DEPOSIT_TRANSFER);
+
+            //LiftAndScoreAction liftAction = new LiftAndScoreAction(verticalSlide, depositServo, DEPOSIT_DUMP, DEPOSIT_TRANSFER);
+            //while (!liftAction.run(new TelemetryPacket()) && opModeIsActive()) {
+            //    sleep(10);
+            //}
+
+            //Perform the intake sequence with the driving Action
+            performIntakeSequence(trajectoryMoveToSample1);
+
+            // Start the lift updates in a separate thread
+            //manageLiftUpdates(liftAction);
+
+            // Create the LiftAndScoreAction
+            LiftAndScoreAction liftAction2 = new LiftAndScoreAction(verticalSlide, depositServo, DEPOSIT_DUMP, DEPOSIT_TRANSFER);
+            manageLiftUpdates(liftAction2);
+            Actions.runBlocking(
+                    new ParallelAction(
+                            trajectoryMoveToBasket2, // Trajectory Action
+                            new Action() {
+                                @Override
+                                public boolean run(@NonNull TelemetryPacket packet) {
+                                     //Return true when the lift is complete
+                                    return liftAction2.run(packet);
+                                }
+                            }
+                    )
+            );
+
+            //Follow trajectory back to net zone
+            //Actions.runBlocking(new SequentialAction(trajectoryMoveToBasket2));
+
+            //Perform lift and score
+            //performLiftAndScore(VerticalSlidePID.HIGH_POSITION, DEPOSIT_DUMP, DEPOSIT_TRANSFER);
+
+        }
+    }
 
 

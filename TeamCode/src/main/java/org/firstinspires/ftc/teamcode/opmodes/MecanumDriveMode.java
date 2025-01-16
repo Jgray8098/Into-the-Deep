@@ -105,7 +105,7 @@ public class MecanumDriveMode extends OpMode {
             //Intake Program for Intake Motor
             if (gamepad2.x) {
                 // Reverse intake and turn off the motor
-                IntakeMotor.setPower(-0.4);
+                IntakeMotor.setPower(-0.45);
                 isIntakeRunning = false; // Reset the state
             } else if (gamepad2.right_bumper) {
                 // Turn on the intake motor and set the state

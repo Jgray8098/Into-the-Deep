@@ -96,14 +96,14 @@ public class AutoOpModeSample extends LinearOpMode {
         }
     }
 
-    //Reusable method for horizontal slide motion
-    public void performIntakeSequence(Action trajectoryMoveToSample1) {
+    //Reusable method for horizontal slide motion - Sample 1
+    public void performIntakeSequence1(Action trajectoryMoveToSample1) {
         // Step 1: Extend the horizontal slide to the intake position close
         horizontalSlide.setTargetPosition(HorizontalSlidePID.INTAKE_POSITION_CLOSE);
 
         // Allow time for the slide to move
         long slideStartTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - slideStartTime < 500 && opModeIsActive()) {
+        while (System.currentTimeMillis() - slideStartTime < 100 && opModeIsActive()) {
             horizontalSlide.update(); // Ensure the slide continues moving
             sleep(10); // Prevent CPU overload
         }
@@ -120,6 +120,69 @@ public class AutoOpModeSample extends LinearOpMode {
             // Update the driving action if provided
             if (trajectoryMoveToSample1 != null) {
                 trajectoryMoveToSample1.run(new TelemetryPacket()); // Execute the action
+            }
+
+            // Keep the intake motor running
+            IntakeMotor.setPower(1.0);
+
+            // Update the horizontal slide
+            horizontalSlide.update();
+
+            // Add a small delay to prevent CPU overload
+            sleep(10);
+        }
+
+        // Step 4: Move the intake servo to the transfer position
+        intakeArmServo.setPosition(TRANSFER_POSITION);
+
+        // Step 5: Reduce motor power to hold the game piece
+        IntakeMotor.setPower(0.1);
+
+        // Step 6: Move the horizontal slide to the transfer position
+        horizontalSlide.setTargetPosition(HorizontalSlidePID.TRANSFER_POSITION);
+
+        // Allow time for the slide to move
+        slideStartTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - slideStartTime < 1000 && opModeIsActive()) {
+            horizontalSlide.update(); // Ensure the slide continues moving
+            sleep(10); // Prevent CPU overload
+        }
+
+        // Step 7: Set the intake motor to -0.4 power to eject the game piece
+        long ejectStartTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - ejectStartTime < 1000 && opModeIsActive()) {
+            IntakeMotor.setPower(-0.4); // Eject the game piece
+            sleep(10);
+        }
+
+        // Step 8: Turn off the intake motor after ejecting
+        IntakeMotor.setPower(0);
+    }
+
+    //Reusable method for horizontal slide motion - Sample 2
+    public void performIntakeSequence2(Action trajectoryMoveToSample2) {
+        // Step 1: Extend the horizontal slide to the intake position close
+        horizontalSlide.setTargetPosition(HorizontalSlidePID.INTAKE_POSITION_CLOSE);
+
+        // Allow time for the slide to move
+        long slideStartTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - slideStartTime < 100 && opModeIsActive()) {
+            horizontalSlide.update(); // Ensure the slide continues moving
+            sleep(10); // Prevent CPU overload
+        }
+
+        // Step 2: Move the intake servo to the intake position
+        intakeArmServo.setPosition(INTAKE_POSITION_IN);
+
+        // Step 3: Start the intake motor at full power
+        long intakeStartTime = System.currentTimeMillis();
+        IntakeMotor.setPower(1.0);
+
+        // Perform the driving action and run the intake for 2 seconds
+        while (System.currentTimeMillis() - intakeStartTime < 2000 && opModeIsActive()) {
+            // Update the driving action if provided
+            if (trajectoryMoveToSample2 != null) {
+                trajectoryMoveToSample2.run(new TelemetryPacket()); // Execute the action
             }
 
             // Keep the intake motor running
@@ -215,7 +278,7 @@ public class AutoOpModeSample extends LinearOpMode {
                         stateStartTime = System.currentTimeMillis();
                     }
 
-                    if (System.currentTimeMillis() - stateStartTime > 500) { // Short delay for servo to move
+                    if (System.currentTimeMillis() - stateStartTime > 200) { // Short delay for servo to move
                         state++;
                         stateStartTime = -1;
                     }
@@ -265,6 +328,7 @@ public class AutoOpModeSample extends LinearOpMode {
             leftHookServo.setPosition(OPEN_POSITION_LEFT);
             rightHookServo.setPosition(OPEN_POSITION_RIGHT);
 
+            //Trajectory to move robot to basket and score preload.
             Action trajectoryMoveToBasket1 = drive.actionBuilder(initialPose)
                     .strafeTo(new Vector2d(51, -68))
                     .turnTo(Math.toRadians(135))
@@ -273,17 +337,36 @@ public class AutoOpModeSample extends LinearOpMode {
 
             Pose2d Pose1 = new Pose2d(51, -68, Math.toRadians(135));
 
+            //Trajectory to move robot to first sample on the field to intake
             Action trajectoryMoveToSample1 = drive.actionBuilder(Pose1)
                     .turnTo(Math.toRadians(163))
-                    .strafeToConstantHeading(new Vector2d(43, -65))
+                    .strafeToConstantHeading(new Vector2d(42, -65))
                     .build();
 
-            Pose2d Pose2 = new Pose2d(43, -65, Math.toRadians(163));
+            Pose2d Pose2 = new Pose2d(42, -65, Math.toRadians(163));
 
+            //Trajectory to move robot back to basket to score
             Action trajectoryMoveToBasket2 = drive.actionBuilder(Pose2)
                     .strafeTo(new Vector2d(51, -68))
                     .turnTo(Math.toRadians(135))
-                    .waitSeconds(4)
+                    .waitSeconds(4.3)
+                    .build();
+
+            Pose2d Pose3 = new Pose2d(51, -68, Math.toRadians(135));
+
+            //Trajectory to move robot to second sample on the field to intake
+            Action trajectoryMoveToSample2 = drive.actionBuilder(Pose3)
+                    .turnTo(Math.toRadians(183))
+                    .strafeTo(new Vector2d(42, -70))
+                    .build();
+
+            Pose2d Pose4 = new Pose2d(42, -70, Math.toRadians(183));
+
+            //Trajectory to move robot to back to basket to score
+            Action trajectoryMoveToBasket3 = drive.actionBuilder(Pose4)
+                    .strafeTo(new Vector2d(51, -68))
+                    .turnTo(Math.toRadians(135))
+                    .waitSeconds(4.3)
                     .build();
 
             waitForStart();
@@ -312,22 +395,8 @@ public class AutoOpModeSample extends LinearOpMode {
                     )
             );
 
-            // Follow trajectory to net zone
-            //Actions.runBlocking(new SequentialAction(trajectoryMoveToBasket1));
-
-            //Perform lift and score
-            //performLiftAndScore(VerticalSlidePID.HIGH_POSITION, DEPOSIT_DUMP, DEPOSIT_TRANSFER);
-
-            //LiftAndScoreAction liftAction = new LiftAndScoreAction(verticalSlide, depositServo, DEPOSIT_DUMP, DEPOSIT_TRANSFER);
-            //while (!liftAction.run(new TelemetryPacket()) && opModeIsActive()) {
-            //    sleep(10);
-            //}
-
             //Perform the intake sequence with the driving Action
-            performIntakeSequence(trajectoryMoveToSample1);
-
-            // Start the lift updates in a separate thread
-            //manageLiftUpdates(liftAction);
+            performIntakeSequence1(trajectoryMoveToSample1);
 
             // Create the LiftAndScoreAction
             LiftAndScoreAction liftAction2 = new LiftAndScoreAction(verticalSlide, depositServo, DEPOSIT_DUMP, DEPOSIT_TRANSFER);
@@ -345,12 +414,24 @@ public class AutoOpModeSample extends LinearOpMode {
                     )
             );
 
-            //Follow trajectory back to net zone
-            //Actions.runBlocking(new SequentialAction(trajectoryMoveToBasket2));
+            //Perform the intake sequence with the driving action
+            performIntakeSequence2(trajectoryMoveToSample2);
 
-            //Perform lift and score
-            //performLiftAndScore(VerticalSlidePID.HIGH_POSITION, DEPOSIT_DUMP, DEPOSIT_TRANSFER);
-
+            // Create the LiftAndScoreAction
+            LiftAndScoreAction liftAction3 = new LiftAndScoreAction(verticalSlide, depositServo, DEPOSIT_DUMP, DEPOSIT_TRANSFER);
+            manageLiftUpdates(liftAction3);
+            Actions.runBlocking(
+                    new ParallelAction(
+                            trajectoryMoveToBasket3, // Trajectory Action
+                            new Action() {
+                                @Override
+                                public boolean run(@NonNull TelemetryPacket packet) {
+                                    //Return true when the lift is complete
+                                    return liftAction3.run(packet);
+                                }
+                            }
+                    )
+            );
         }
     }
 

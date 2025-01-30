@@ -222,6 +222,21 @@ public class AutoOpModeSample extends LinearOpMode {
         IntakeMotor.setPower(0);
     }
 
+    public void performIntakeSequence3() {
+        // Step 2: Move the intake servo to the init position
+        intakeArmServo.setPosition(INIT_POSITION);
+
+        // Step 1: Extend the horizontal slide to the intake position close
+        horizontalSlide.setTargetPosition(HorizontalSlidePID.HOME);
+
+        // Allow time for the slide to move
+        long slideStartTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - slideStartTime < 100 && opModeIsActive()) {
+            horizontalSlide.update(); // Ensure the slide continues moving
+            sleep(10); // Prevent CPU overload
+        }
+    }
+
     public class LiftAndScoreAction implements Action {
         private final VerticalSlidePID verticalSlide;
         private final Servo depositServo;
@@ -432,6 +447,8 @@ public class AutoOpModeSample extends LinearOpMode {
                             }
                     )
             );
+            //Move intake to home position for transfer to TeleOp
+            performIntakeSequence3();
         }
     }
 

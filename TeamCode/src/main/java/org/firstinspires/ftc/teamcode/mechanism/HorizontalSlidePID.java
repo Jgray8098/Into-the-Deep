@@ -20,6 +20,7 @@ public class HorizontalSlidePID {
 
     // Slide positions
     private final int POSITION_0 = 0;   // Starting position
+    public static final int HOME = 0;
     public static final int TRANSFER_POSITION = -115; // Transfer position
     public static final int INTAKE_POSITION = -1500; // Full extension
     public static final int INTAKE_POSITION_CLOSE = -700; // Midway extension

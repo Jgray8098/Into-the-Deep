@@ -354,11 +354,12 @@ public class AutoOpModeSample extends LinearOpMode {
 
             //Trajectory to move robot to first sample on the field to intake
             Action trajectoryMoveToSample1 = drive.actionBuilder(Pose1)
-                    .turnTo(Math.toRadians(163))
-                    .strafeToConstantHeading(new Vector2d(42, -65))
+                    .splineTo(new Vector2d(40, -60), Math.toRadians(182))
+                    //.turnTo(Math.toRadians(163))
+                    //.strafeToConstantHeading(new Vector2d(42, -65))
                     .build();
 
-            Pose2d Pose2 = new Pose2d(42, -65, Math.toRadians(163));
+            Pose2d Pose2 = new Pose2d(40, -60, Math.toRadians(182));
 
             //Trajectory to move robot back to basket to score
             Action trajectoryMoveToBasket2 = drive.actionBuilder(Pose2)
@@ -371,11 +372,11 @@ public class AutoOpModeSample extends LinearOpMode {
 
             //Trajectory to move robot to second sample on the field to intake
             Action trajectoryMoveToSample2 = drive.actionBuilder(Pose3)
-                    .turnTo(Math.toRadians(183))
+                    .turnTo(Math.toRadians(188))
                     .strafeTo(new Vector2d(42, -70))
                     .build();
 
-            Pose2d Pose4 = new Pose2d(42, -70, Math.toRadians(183));
+            Pose2d Pose4 = new Pose2d(42, -70, Math.toRadians(188));
 
             //Trajectory to move robot to back to basket to score
             Action trajectoryMoveToBasket3 = drive.actionBuilder(Pose4)
@@ -393,7 +394,7 @@ public class AutoOpModeSample extends LinearOpMode {
             // Create the LiftAndScoreAction
             LiftAndScoreAction liftAction1 = new LiftAndScoreAction(verticalSlide, depositServo, DEPOSIT_DUMP, DEPOSIT_TRANSFER);
 
-// Start the lift updates in a separate thread
+            // Start the lift updates in a separate thread
             manageLiftUpdates(liftAction1);
 
             // Create the LiftAndScoreAction

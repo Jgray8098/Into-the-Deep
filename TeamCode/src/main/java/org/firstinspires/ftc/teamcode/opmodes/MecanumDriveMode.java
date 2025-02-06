@@ -30,7 +30,7 @@ public class MecanumDriveMode extends OpMode {
     //Pincher Positions for level 2 ascent
     private static final double OPEN_POSITION_RIGHT = 0.5;
     private static final double CLOSED_POSITION_RIGHT = 0.97;
-    private static final double OPEN_POSITION_LEFT = 0.47;
+    private static final double OPEN_POSITION_LEFT = 0.5;
     private static final double CLOSED_POSITION_LEFT = 0.97;
 
     //Pincher Positions for scoring specimen

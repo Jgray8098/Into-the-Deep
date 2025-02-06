@@ -46,7 +46,7 @@ public class AutoOpModeSample extends LinearOpMode {
 
     //Pincher Positions for level 2 ascent
     private static final double OPEN_POSITION_RIGHT = 0.5;
-    private static final double OPEN_POSITION_LEFT = 0.47;
+    private static final double OPEN_POSITION_LEFT = 0.5;
 
     // Reusable method for lift and scoring
     public void performLiftAndScore(int targetPosition, double dumpPosition, double transferPosition) {
@@ -372,11 +372,15 @@ public class AutoOpModeSample extends LinearOpMode {
 
             //Trajectory to move robot to second sample on the field to intake
             Action trajectoryMoveToSample2 = drive.actionBuilder(Pose3)
-                    .turnTo(Math.toRadians(188))
-                    .strafeTo(new Vector2d(42, -70))
+                    .strafeToLinearHeading(new Vector2d(40, -70), Math.toRadians(199))
+                    //.strafeTo(new Vector2d(40, -75))
+                    //.turnTo(Math.toRadians(188))
+                    //.splineTo(new Vector2d(40, -70), Math.toRadians(188))
+                    //.turnTo(Math.toRadians(188))
+                    //.strafeTo(new Vector2d(42, -70))
                     .build();
 
-            Pose2d Pose4 = new Pose2d(42, -70, Math.toRadians(188));
+            Pose2d Pose4 = new Pose2d(40, -70, Math.toRadians(199));
 
             //Trajectory to move robot to back to basket to score
             Action trajectoryMoveToBasket3 = drive.actionBuilder(Pose4)

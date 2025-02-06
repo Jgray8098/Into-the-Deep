@@ -39,7 +39,7 @@ public class AutoOpModeSpecimen extends LinearOpMode {
 
     //Pincher Positions
     private static final double OPEN_POSITION_RIGHT = 0.5;
-    private static final double OPEN_POSITION_LEFT = 0.47;
+    private static final double OPEN_POSITION_LEFT = 0.5;
     private static final double OPEN_PINCH_RIGHT = 0.85;
     private static final double OPEN_PINCH_LEFT = 0.85;
     private static final double CLOSED_PINCH_RIGHT = 1.0;
@@ -78,6 +78,7 @@ public class AutoOpModeSpecimen extends LinearOpMode {
         //Move pinchers to the closed position
         leftHookServo.setPosition(CLOSED_PINCH_LEFT);
         rightHookServo.setPosition(CLOSED_PINCH_RIGHT);
+        sleep(300);
 
         //Extend vertical slide to the High Chamber Up position
         verticalSlide.setTargetPosition(VerticalSlidePID.HIGH_CHAMBER_UP);

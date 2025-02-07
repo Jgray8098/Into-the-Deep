@@ -343,6 +343,10 @@ public class AutoOpModeSample extends LinearOpMode {
             leftHookServo.setPosition(OPEN_POSITION_LEFT);
             rightHookServo.setPosition(OPEN_POSITION_RIGHT);
 
+            // Only reset encoders if the slide is physically at the bottom
+            verticalSlide.resetVerticalEncoders();
+            horizontalSlide.resetHorizontalEncoders();
+
             //Trajectory to move robot to basket and score preload.
             Action trajectoryMoveToBasket1 = drive.actionBuilder(initialPose)
                     .strafeTo(new Vector2d(51, -68))

@@ -50,6 +50,14 @@ public class VerticalSlidePID {
 
         rightLift.setDirection(DcMotor.Direction.REVERSE);
 
+        //leftLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //rightLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        leftLift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightLift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    }
+
+    public void resetVerticalEncoders() {
         leftLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightLift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 

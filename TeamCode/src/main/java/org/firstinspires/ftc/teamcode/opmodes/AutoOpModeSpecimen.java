@@ -230,6 +230,9 @@ public class AutoOpModeSpecimen extends LinearOpMode {
         leftHookServo.setPosition(OPEN_POSITION_LEFT);
         rightHookServo.setPosition(OPEN_POSITION_RIGHT);
 
+        // Only reset encoders if the slide is physically at the bottom
+        verticalSlide.resetVerticalEncoders();
+
         Action trajectoryMoveToObservation = drive.actionBuilder(initialPose)
                 .strafeTo(new Vector2d(55, 65))
                 .build();

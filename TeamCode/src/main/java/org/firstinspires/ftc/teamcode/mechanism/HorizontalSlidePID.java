@@ -30,9 +30,15 @@ public class HorizontalSlidePID {
         HorizontalSlide = hardwareMap.get(DcMotor.class, "HorizontalSlide");
 
         // Initialize the motor
-        HorizontalSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //HorizontalSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         HorizontalSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER); // Using custom PID
         HorizontalSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    }
+
+    public void resetHorizontalEncoders() {
+        HorizontalSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        HorizontalSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     public void setTargetPosition(int position) {
